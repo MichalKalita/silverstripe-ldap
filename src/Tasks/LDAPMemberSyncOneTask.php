@@ -69,17 +69,17 @@ class LDAPMemberSyncOneTask extends LDAPMemberSyncTask
         if ($member->exists()) {
             $this->log(sprintf(
                 'Updating existing Member %s: "%s" (ID: %s, SAM Account Name: %s)',
-                $user['objectguid'],
+                $user['entryuuid'],
                 $member->getName(),
                 $member->ID,
-                $user['samaccountname']
+                $user['uid']
             ));
         } else {
             $this->log(sprintf(
                 'Creating new Member %s: "%s" (SAM Account Name: %s)',
-                $user['objectguid'],
+                $user['entryuuid'],
                 $user['cn'],
-                $user['samaccountname']
+                $user['uid']
             ));
         }
 

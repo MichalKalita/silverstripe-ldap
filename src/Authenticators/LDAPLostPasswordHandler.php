@@ -113,12 +113,12 @@ class LDAPLostPasswordHandler extends LostPasswordHandler
 
     protected function getMemberFromData(array $data)
     {
-        $member = Member::get()->filter('GUID', $this->ldapUserData['objectguid'])->limit(1)->first();
+        $member = Member::get()->filter('GUID', $this->ldapUserData['entryuuid'])->limit(1)->first();
 
         // User haven't been imported yet so do that now
         if (!$member || !$member->exists()) {
             $member = Member::create();
-            $member->GUID = $this->ldapUserData['objectguid'];
+            $member->GUID = $this->ldapUserData['entryuuid'];
         }
 
         // Update the users from LDAP so we are sure that the email is correct.

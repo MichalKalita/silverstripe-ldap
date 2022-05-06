@@ -65,9 +65,9 @@ class LDAPGroupSyncTask extends BuildTask
         // especially in the case where getGroups() would return a lot of groups
         $ldapGroups = $this->ldapService->getGroups(
             false,
-            ['objectguid', 'samaccountname', 'dn', 'name', 'description'],
+            ['entryuuid', 'cn', 'dn', 'name', 'description'],
             // Change the indexing attribute so we can look up by GUID during the deletion process below.
-            'objectguid'
+            'entryuuid'
         );
 
         $start = time();
@@ -77,26 +77,26 @@ class LDAPGroupSyncTask extends BuildTask
         $deleted = 0;
 
         foreach ($ldapGroups as $data) {
-            $group = Group::get()->filter('GUID', $data['objectguid'])->limit(1)->first();
+            $group = Group::get()->filter('GUID', $data['entryuuid'])->limit(1)->first();
 
             if (!($group && $group->exists())) {
                 // create the initial Group with some internal fields
                 $group = new Group();
-                $group->GUID = $data['objectguid'];
+                $group->GUID = $data['entryuuid'];
 
                 $this->log(sprintf(
-                    'Creating new Group (GUID: %s, sAMAccountName: %s)',
-                    $data['objectguid'],
-                    $data['samaccountname']
+                    'Creating new Group (GUID: %s, uid: %s)',
+                    $data['entryuuid'],
+                    $data['uid']
                 ));
                 $created++;
             } else {
                 $this->log(sprintf(
-                    'Updating existing Group "%s" (ID: %s, GUID: %s, sAMAccountName: %s)',
+                    'Updating existing Group "%s" (ID: %s, GUID: %s, uid: %s)',
                     $group->getTitle(),
                     $group->ID,
-                    $data['objectguid'],
-                    $data['samaccountname']
+                    $data['entryuuid'],
+                    $data['uid']
                 ));
                 $updated++;
             }

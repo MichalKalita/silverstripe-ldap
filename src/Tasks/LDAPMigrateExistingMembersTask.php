@@ -49,7 +49,7 @@ class LDAPMigrateExistingMembersTask extends BuildTask
      */
     public function run($request)
     {
-        $users = $this->ldapService->getUsers(['objectguid', 'mail']);
+        $users = $this->ldapService->getUsers(['entryuuid', 'mail']);
         $start = time();
         $count = 0;
 
@@ -68,7 +68,7 @@ class LDAPMigrateExistingMembersTask extends BuildTask
             }
 
             // Member was found, migrate them by setting the GUID field
-            $member->GUID = $user['objectguid'];
+            $member->GUID = $user['entryuuid'];
             $member->write();
 
             $count++;

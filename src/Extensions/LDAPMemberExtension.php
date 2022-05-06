@@ -41,8 +41,8 @@ class LDAPMemberExtension extends DataExtension
      * @config
      */
     private static $ldap_field_mappings = [
-        'givenname' => 'FirstName',
-        'samaccountname' => 'Username',
+        'givenName' => 'FirstName',
+        'uid' => 'Username',
         'sn' => 'Surname',
         'mail' => 'Email',
     ];

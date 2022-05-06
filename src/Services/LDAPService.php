@@ -376,7 +376,7 @@ class LDAPService implements Flushable
             }
 
             foreach ($records as $record) {
-                $results[$record['objectguid']] = $record;
+                $results[$record['entryuuid']] = $record;
             }
         }
 
@@ -455,6 +455,7 @@ class LDAPService implements Flushable
                 Ldap::SEARCH_SCOPE_SUB,
                 $attributes
             );
+            $this->getLogger()->debug(json_encode($records));
             if ($records) {
                 return $records[0];
             }
@@ -527,14 +528,14 @@ class LDAPService implements Flushable
         }
 
         if (!$data) {
-            $data = $this->getUserByGUID($member->GUID);
+            $data = $this->getUserByGUID($member->GUID, ['entryuuid', 'uid', 'cn', 'givenName', 'sn', 'mail']);
             if (!$data) {
                 $this->getLogger()->debug(sprintf('Could not retrieve data for user. GUID: %s', $member->GUID));
                 return false;
             }
         }
 
-        $member->IsExpired = ($data['useraccountcontrol'] & 2) == 2;
+        $member->IsExpired = false;
         $member->LastSynced = (string)DBDatetime::now();
 
         foreach ($member->config()->ldap_field_mappings as $attribute => $field) {
@@ -559,7 +560,7 @@ class LDAPService implements Flushable
                             'Attribute %s configured in Member.ldap_field_mappings, ' .
                             'but no available attribute in AD data (GUID: %s, Member ID: %s)',
                             $attribute,
-                            $data['objectguid'],
+                            $data['entryuuid'],
                             $member->ID
                         )
                     );
@@ -667,7 +668,7 @@ class LDAPService implements Flushable
 
         // Setup variables
         $thumbnailFolder = Folder::find_or_make($member->config()->ldap_thumbnail_path);
-        $filename = sprintf($attributeName . '-%s.jpg', $data['objectguid']);
+        $filename = sprintf($attributeName . '-%s.jpg', $data['entryuuid']);
         $filePath = File::join_paths($thumbnailFolder->getFilename(), $filename);
         $fileCfg = [
             // if there's a filename conflict we've got new content so overwrite it.
@@ -795,8 +796,8 @@ class LDAPService implements Flushable
         }
 
         // Synchronise specific guaranteed fields.
-        $group->Code = $data['samaccountname'];
-        $group->Title = $data['samaccountname'];
+        $group->Code = $data['cn'];
+        $group->Title = $data['cn'];
         if (!empty($data['description'])) {
             $group->Description = $data['description'];
         }
@@ -868,12 +869,12 @@ class LDAPService implements Flushable
         }
 
         $user = $this->getUserByUsername($member->Username);
-        if (empty($user['objectguid'])) {
+        if (empty($user['entryuuid'])) {
             throw new ValidationException('LDAP synchronisation failure: user missing GUID');
         }
 
         // Creation was successful, mark the user as LDAP managed by setting the GUID.
-        $member->GUID = $user['objectguid'];
+        $member->GUID = $user['entryuuid'];
     }
 
     /**
@@ -903,7 +904,6 @@ class LDAPService implements Flushable
                 'objectclass' => 'group',
                 'cn' => $group->Title,
                 'name' => $group->Title,
-                'samaccountname' => $group->Title,
                 'description' => $group->Description,
                 'distinguishedname' => $dn
             ]);
@@ -912,7 +912,7 @@ class LDAPService implements Flushable
         }
 
         $data = $this->getGroupByDN($dn);
-        if (empty($data['objectguid'])) {
+        if (empty($data['entryuuid'])) {
             throw new ValidationException(
                 new ValidationResult(
                     false,
@@ -922,7 +922,7 @@ class LDAPService implements Flushable
         }
 
         // Creation was successful, mark the group as LDAP managed by setting the GUID.
-        $group->GUID = $data['objectguid'];
+        $group->GUID = $data['entryuuid'];
         $group->DN = $data['dn'];
     }
 
@@ -942,7 +942,7 @@ class LDAPService implements Flushable
         }
 
         $data = $this->getUserByGUID($member->GUID);
-        if (empty($data['objectguid'])) {
+        if (empty($data['entryuuid'])) {
             throw new ValidationException('LDAP synchronisation failure: user missing GUID');
         }
 
@@ -1016,7 +1016,7 @@ class LDAPService implements Flushable
         $removeGroups = [];
 
         $user = $this->getUserByGUID($member->GUID);
-        if (empty($user['objectguid'])) {
+        if (empty($user['entryuuid'])) {
             throw new ValidationException('LDAP update failure: user missing GUID');
         }
 

@@ -66,7 +66,7 @@ class LDAPMemberSyncTask extends BuildTask
         // this is useful to avoid holding onto too much data in memory
         // especially in the case where getUser() would return a lot of users
         $users = $this->ldapService->getUsers(array_merge(
-            ['objectguid', 'cn', 'samaccountname', 'useraccountcontrol', 'memberof'],
+            ['entryuuid', 'cn', 'uid', 'useraccountcontrol', 'memberof'],
             array_keys(Config::inst()->get(Member::class, 'ldap_field_mappings'))
         ));
 
@@ -87,7 +87,7 @@ class LDAPMemberSyncTask extends BuildTask
                     $data['objectguid'],
                     $member->getName(),
                     $member->ID,
-                    $data['samaccountname']
+                    $data['uid']
                 ));
             } else {
                 $created++;
@@ -95,7 +95,7 @@ class LDAPMemberSyncTask extends BuildTask
                     'Creating new Member %s: "%s" (SAM Account Name: %s)',
                     $data['objectguid'],
                     $data['cn'],
-                    $data['samaccountname']
+                    $data['uid']
                 ));
             }
 

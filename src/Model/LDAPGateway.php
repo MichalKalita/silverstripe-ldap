@@ -215,7 +215,7 @@ class LDAPGateway
     public function getGroupByGUID($guid, $baseDn = null, $scope = Ldap::SEARCH_SCOPE_SUB, $attributes = [])
     {
         return $this->search(
-            sprintf('(&(objectClass=group)(objectGUID=%s))', LDAPUtil::str_to_hex_guid($guid, true)),
+            sprintf('(&(objectClass=group)(objectGUID=%s))', $guid),
             $baseDn,
             $scope,
             $attributes
@@ -254,7 +254,7 @@ class LDAPGateway
      */
     public function getUsers($baseDn = null, $scope = Ldap::SEARCH_SCOPE_SUB, $attributes = [], $sort = '')
     {
-        $filter = '(&(objectClass=user)(!(objectClass=computer))(!(samaccountname=Guest))(!(samaccountname=Administrator))(!(samaccountname=krbtgt)))';
+        $filter = '(&(objectClass=person))';
 
         $this->extend('updateUsersFilter', $filter);
 
@@ -277,7 +277,7 @@ class LDAPGateway
      */
     public function getUsersWithIterator($baseDn = null, $attributes = [])
     {
-        $filter = '(&(objectClass=user)(!(objectClass=computer))(!(samaccountname=Guest))(!(samaccountname=Administrator))(!(samaccountname=krbtgt)))';
+        $filter = '(&(objectClass=person))';
 
         $this->extend('updateUsersWithIteratorFilter', $filter);
 
@@ -297,7 +297,7 @@ class LDAPGateway
     public function getUserByGUID($guid, $baseDn = null, $scope = Ldap::SEARCH_SCOPE_SUB, $attributes = [])
     {
         return $this->search(
-            sprintf('(&(objectClass=user)(objectGUID=%s))', LDAPUtil::str_to_hex_guid($guid, true)),
+            sprintf('(&(objectClass=person)(entryUUID=%s))', $guid),
             $baseDn,
             $scope,
             $attributes
@@ -317,7 +317,7 @@ class LDAPGateway
     public function getUserByDN($dn, $baseDn = null, $scope = Ldap::SEARCH_SCOPE_SUB, $attributes = [])
     {
         return $this->search(
-            sprintf('(&(objectClass=user)(distinguishedname=%s))', $dn),
+            sprintf('(&(objectClass=person)(distinguishedname=%s))', $dn),
             $baseDn,
             $scope,
             $attributes
@@ -333,7 +333,7 @@ class LDAPGateway
     public function getUserByEmail($email, $baseDn = null, $scope = Ldap::SEARCH_SCOPE_SUB, $attributes = [])
     {
         return $this->search(
-            sprintf('(&(objectClass=user)(mail=%s))', AbstractFilter::escapeValue($email)),
+            sprintf('(&(objectClass=person)(mail=%s))', AbstractFilter::escapeValue($email)),
             $baseDn,
             $scope,
             $attributes
@@ -361,7 +361,7 @@ class LDAPGateway
         $username = $this->ldap->getCanonicalAccountName($username, $option);
         switch ($option) {
             case Ldap::ACCTNAME_FORM_USERNAME: // traditional style usernames, e.g. alice
-                $filter = sprintf('(&(objectClass=user)(samaccountname=%s))', AbstractFilter::escapeValue($username));
+                $filter = sprintf('(&(objectClass=person)(uid=%s))', AbstractFilter::escapeValue($username));
                 break;
             case Ldap::ACCTNAME_FORM_BACKSLASH: // backslash style usernames, e.g. FOO\alice
                 // @todo Not supported yet!
@@ -369,7 +369,7 @@ class LDAPGateway
                 break;
             case Ldap::ACCTNAME_FORM_PRINCIPAL: // principal style usernames, e.g. alice@foo.com
                 $filter = sprintf(
-                    '(&(objectClass=user)(userprincipalname=%s))',
+                    '(&(objectClass=person)(userprincipalname=%s))',
                     AbstractFilter::escapeValue($username)
                 );
                 break;
@@ -379,7 +379,7 @@ class LDAPGateway
                 break;
             default: // default to principal style
                 $filter = sprintf(
-                    '(&(objectClass=user)(userprincipalname=%s))',
+                    '(&(objectClass=person)(userprincipalname=%s))',
                     AbstractFilter::escapeValue($username)
                 );
                 break;
@@ -401,10 +401,10 @@ class LDAPGateway
         $option = isset($options['accountCanonicalForm']) ? $options['accountCanonicalForm'] : null;
         switch ($option) {
             case Ldap::ACCTNAME_FORM_USERNAME: // traditional style usernames, e.g. alice
-                if (empty($data['samaccountname'])) {
-                    throw new \Exception('Could not extract canonical username: samaccountname field missing');
+                if (empty($data['uid'])) {
+                    throw new \Exception('Could not extract canonical username: uid field missing');
                 }
-                return $data['samaccountname'];
+                return $data['uid'];
             case Ldap::ACCTNAME_FORM_BACKSLASH: // backslash style usernames, e.g. FOO\alice
                 // @todo Not supported yet!
                 throw new Exception('Backslash style not supported in LDAPGateway::getUsernameByEmail()!');
